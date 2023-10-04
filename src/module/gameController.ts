@@ -11,12 +11,19 @@ class GameController{
     minesArea: HTMLElement
     // 刷新按钮
     reloadButton: HTMLElement
+    // 暂停按钮
+    stopButton: HTMLElement
+    // 继续按钮
+    goOnButton: HTMLElement
     
     // 游戏是否结束
     isAlive: boolean = true
 
     // 是否是第一次点击
     isFirstClick: boolean = true
+
+    // 是否继续进行
+    isOn: boolean = true
 
     // 绑定this的鼠标监听函数
     bindMouseClickHandler: (e: MouseEvent) => void
@@ -25,7 +32,9 @@ class GameController{
         this.blocks = new Block()
         this.scorePanel = new ScorePanel(startTime,totalBolcks,mines)
         this.minesArea = document.querySelector("#stage")!
-        this.reloadButton = document.querySelector("#reload>button")!
+        this.reloadButton = document.querySelector("#reload")!
+        this.stopButton = document.querySelector("#stop")!
+        this.goOnButton = document.querySelector("#go_on")!
 
         this.bindMouseClickHandler = this.mouseClickHandler.bind(this)
 
@@ -45,10 +54,16 @@ class GameController{
         } 
 
         // 绑定扫雷区域鼠标单击事件
-        this.minesArea.addEventListener("click",this.bindMouseClickHandler)
+        this.addMinesListener()
 
         // 绑定刷新按钮点击事件
         this.reloadButton.addEventListener("click",this.reloadButtonClickHandler.bind(this))
+
+        // 绑定暂停按钮点击事件
+        this.stopButton.addEventListener("click",this.stopButtonClickHandler.bind(this))
+
+        // 绑定继续按钮点击事件
+        this.goOnButton.addEventListener("click",this.goOnButtonClickHandler.bind(this))
 
     }
 
@@ -63,7 +78,6 @@ class GameController{
             try{
                 // 首次点击后才开始运行
                 if(this.isFirstClick){
-
                     this.run()
                 }
                 // 翻开的格子数
@@ -88,19 +102,45 @@ class GameController{
         }
     }
 
-    // 游戏运行
+    // 计时器运行
     private run(){
+        // 游戏正常进行
         if(this.isAlive){
-            this.scorePanel.addTime()
+            // 游戏继续
+            if(this.isOn){
+                this.scorePanel.addTime()
+            }
             setTimeout(this.run.bind(this),1000)
-        }else{
-            this.minesArea.removeEventListener("click",this.bindMouseClickHandler!)
+        }else{ // 游戏结束
+            this.removeMinesListener()
         }
+    }
+
+    // 移除扫雷区域监听事件
+    private removeMinesListener(){
+        this.minesArea.removeEventListener("click",this.bindMouseClickHandler!)
+    }
+
+    // 添加扫雷区域监听事件
+    private addMinesListener(){
+        this.minesArea.addEventListener("click",this.bindMouseClickHandler!)
     }
 
     // 刷新按钮鼠标点击事件
     private reloadButtonClickHandler(e: MouseEvent){        
         location.reload()
+    }
+
+    // 暂停按钮鼠标单击事件
+    private stopButtonClickHandler(e: MouseEvent){
+        this.isOn = false
+        this.removeMinesListener()
+    }
+
+    // 继续按钮鼠标点击事件
+    private goOnButtonClickHandler(e: MouseEvent){
+        this.isOn = true
+        this.addMinesListener()
     }
 }
 

@@ -55,11 +55,17 @@ body{
 
 }
 
-#reload{
+#ribbon{
     display: flex;
     justify-content: center;
-    &>button{
+    flex-flow: row wrap;
+    &>button:nth-child(3){
         margin: 0;
-        width: 60px;
+        width: 84px;
     }
+}
+
+#stop,#go_on{
+    width: 40px;
+    margin: 5px 2px;
 }
