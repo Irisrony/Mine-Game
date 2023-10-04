@@ -1,0 +1,13 @@
+{
+    "include": ["src/**/*"],
+    "exclude": [],
+    // 编译器配置项
+    "compilerOptions": {
+        // 编译的规范
+        "target": "ES2015",
+        // 模块化的规范
+        "module": "ES2015",
+        "strict": true,
+        "noEmitOnError": true
+    }
+}
