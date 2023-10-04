@@ -112,8 +112,15 @@ class GameController{
             }
             setTimeout(this.run.bind(this),1000)
         }else{ // 游戏结束
+            this.gameOver()
             this.removeMinesListener()
         }
+    }
+
+    // 游戏结束，移除所有监听器
+    private gameOver(){
+        this.removeMinesListener()
+
     }
 
     // 移除扫雷区域监听事件
@@ -133,14 +140,20 @@ class GameController{
 
     // 暂停按钮鼠标单击事件
     private stopButtonClickHandler(e: MouseEvent){
-        this.isOn = false
-        this.removeMinesListener()
+        // 游戏正常运行才生效
+        if(this.isAlive){
+            this.isOn = false
+            this.removeMinesListener()
+        }
     }
 
     // 继续按钮鼠标点击事件
     private goOnButtonClickHandler(e: MouseEvent){
-        this.isOn = true
-        this.addMinesListener()
+        // 游戏正常运行才生效
+        if(this.isAlive){
+            this.isOn = true
+            this.addMinesListener()
+        }
     }
 }
 
