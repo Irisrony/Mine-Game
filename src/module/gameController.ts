@@ -65,7 +65,7 @@ class GameController{
 
                 if(this.scorePanel.Block === 0){
                     this.isAlive = false
-                    alert(`您成功了！用时${this.scorePanel.TimeRec}`)
+                    alert(`您成功了！用时${this.scorePanel.TimeRec}s!`)
                 }
 
             }catch(e : any){
