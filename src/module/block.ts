@@ -1,22 +1,33 @@
-import { blocksHeight,blocksWidth,mines,Color } from "./global"
+import { Color } from "./global"
+
+type blockInfo = {
+    x: number
+    y: number
+    roundMines: number
+}
 
 class Block{
     // 每一个方块
-    blocks: Array<Array<number>>
+    private blocks: Array<Array<number>>
     // 每个方块是否被翻开了
-    vis: Array<Array<boolean>>
-    // 方块集合
-    blocksElem: HTMLCollection
-    // 大小： 24 * 20
-    width: number = blocksWidth
-    height: number = blocksHeight
+    private vis: Array<Array<boolean>>
+    // 大小
+    private width: number
+    private height: number
+    // 地雷数量
+    private mines: number
     // 初始化时最大掀开的格子数
-    readonly maxOpenBlocks: number = 20
+    private maxOpenBlocks: number = 20
 
-    constructor(){
-        this.blocksElem = document.querySelector("#stage")!.getElementsByTagName('div')
+    constructor(blocksWidth:number,blocksHeight:number,mines:number){
+        
+        this.width = blocksWidth
+        this.height = blocksHeight
+        this.mines = mines
+
         this.blocks = new Array(this.height).fill(0).map(v=>new Array(this.width).fill(0))
         this.vis = new Array(this.height).fill(0).map(v=>new Array(this.width).fill(false))
+        
         this.init()
     }
 
@@ -24,77 +35,70 @@ class Block{
         // 初始化方块
         for(let i = 0;i<this.height;++i){
             for(let j = 0;j<this.width;++j){
-                if(i*this.width + j < mines){
+                if(i*this.width + j < this.mines){
                     this.blocks[i][j] = 1
                 }
             }
         }        
         // 打乱顺序
-        this.shuffle()
-        
+        this.shuffle()   
     }
 
     // 检查是否是地雷
-    checkMine(i : number,j : number,flag: boolean) : number{
-        // 地雷
-        if(this.blocks[i][j] === 1){
-            this.paintBlock(i, j)
+    checkMine(i : number,j : number,flag: boolean) : Array<blockInfo>{
+        if(this.blocks[i][j] === 1){// 地雷
             throw new Error("碰到炸弹了!")
         }else if(this.blocks[i][j] === 0 && !this.vis[i][j]){ // 安全格
             return this.bfsBlocks(i,j,flag)
         }else{ // 翻开过了
-            return 0
-        }
-    }
-
-    // 绘制被翻开的格子
-    private paintBlock(i: number,j: number){
-        (this.blocksElem[i*this.width+j] as HTMLElement).style.backgroundColor = Color.Open;
-        if(this.blocks[i][j] === 1){ // 炸弹
-            (this.blocksElem[i*this.width+j] as HTMLElement).style.color = Color.Over;
-            (this.blocksElem[i*this.width+j] as HTMLElement).innerHTML = "X"
-        }else{ // 安全格
-            const cnt = this.calMines(i,j);
-            (this.blocksElem[i*this.width+j] as HTMLElement).innerHTML = cnt === 0 ? "" : cnt + "";
+            return []
         }
     }
 
     // 首次广搜不是炸弹的格子
-    private bfsBlocks(xx: number,yy: number, firstFlag: boolean): number{
+    private bfsBlocks(x: number,y: number, firstFlag: boolean): Array<blockInfo>{
         // 先绘制进来的
         let cnt = 1
-        this.paintBlock(xx,yy)
-        this.vis[xx][yy] = true
-        const roundMines = this.calMines(xx,yy)
+        this.vis[x][y] = true
 
-        // 队列
-        const q : Array<[number,number]> = []
-        q.push([xx,yy])
+        // 该格子周围的地雷
+        let roundMines = this.calMines(x,y)
 
         // 空格子队列
         const emptyQ : Array<[number,number]> = []
 
         if(roundMines === 0){
-            emptyQ.push([xx,yy])
+            emptyQ.push([x,y])
         }
+
+        // 队列
+        const q : Array<[number,number]> = []
+        q.push([x,y])
+
+        // 返回值
+        const res = new Array<blockInfo>
+        res.push({x,y,roundMines})
 
         // 首次点击
         while(q.length > 0 && firstFlag && cnt < this.maxOpenBlocks){
-            const [x,y] = q.shift()!
+            const [xx,yy] = q.shift()!
             for(let i = -1;i<=1;++i){
                 for(let j = -1;j<=1;++j){
                     if(Math.abs(i) === Math.abs(j)){
                         continue
                     }
-                    const curX = x+i,curY = y+j
-                    if(curX>=0&&curX<this.height&&curY>=0&&curY<this.width&&this.blocks[curX][curY] === 0&&!this.vis[curX][curY]&&cnt < this.maxOpenBlocks){
+                    // 新位置
+                    const [x,y] = [xx+i,yy+j]
+                    // 判断是否为合法位置
+                    if(x>=0&&x<this.height&&y>=0&&y<this.width&&this.blocks[x][y] === 0&&!this.vis[x][y]&&cnt < this.maxOpenBlocks){
                         ++cnt
-                        this.paintBlock(curX,curY)
-                        this.vis[curX][curY] = true
-                        q.push([curX,curY])
+                        this.vis[x][y] = true
+                        q.push([x,y])
+                        roundMines = this.calMines(x,y)
+                        res.push({x,y,roundMines})
 
-                        if(this.calMines(curX,curY) === 0){
-                            emptyQ.push([curX,curY])
+                        if(roundMines === 0){
+                            emptyQ.push([x,y])
                         }
                     }
                 }
@@ -103,39 +107,47 @@ class Block{
 
         // 翻开所有空格子
         while(emptyQ.length > 0){
-            const [x,y] = emptyQ.shift()!
+            const [xx,yy] = emptyQ.shift()!
             for(let i = -1;i<=1;++i){
                 for(let j = -1;j<=1;++j){
-                    const curX = x+i,curY = y+j
-                    if(curX>=0&&curX<this.height&&curY>=0&&curY<this.width&&this.blocks[curX][curY] === 0&&!this.vis[curX][curY]){
+                    // 当前位置
+                    const [x,y] = [xx+i,yy+j]
+                    // 判断是否为合法位置
+                    if(x>=0&&x<this.height&&y>=0&&y<this.width&&this.blocks[x][y] === 0&&!this.vis[x][y]){
                         ++cnt
-                        this.paintBlock(curX,curY)
-                        this.vis[curX][curY] = true
+                        this.vis[x][y] = true
 
-                        if(this.calMines(curX,curY) === 0){
-                            emptyQ.push([curX,curY])
+                        roundMines = this.calMines(x,y)
+
+                        res.push({x,y,roundMines})
+
+                        if(roundMines === 0){
+                            emptyQ.push([x,y])
                         }
                     }
                 }
             }
         }
         
-        return cnt
+        return res
     }
 
-    // 描出所有地雷
-    paintMines(){
-        for(let i = 0;i<this.height;++i){
-            for(let j = 0;j<this.width;++j){
-                if(this.blocks[i][j] === 1){
-                    this.paintBlock(i,j)
+    // 获得所有地雷位置
+    getAllMines(): Array<blockInfo>{
+        const res = new Array<blockInfo>
+        for(let x = 0;x<this.height;++x){
+            for(let y = 0;y<this.width;++y){
+                if(this.blocks[x][y] === 1){
+                    const roundMines = -1
+                    res.push({x,y,roundMines})
                 }
             }
-        }        
+        }
+        return res
     }
 
     // 打乱顺序
-    private shuffle(){
+    private shuffle(): void{
         for(let i = 0;i<this.height;++i){
             for(let j = 0;j<this.width;++j){
                 const pos = Math.round(Math.random()*(this.width*this.height-1))             
@@ -145,7 +157,7 @@ class Block{
     }
 
     // 交换
-    private swap(i:number,j:number,prei:number,prej:number){        
+    private swap(i:number,j:number,prei:number,prej:number): void{        
         const tmp = this.blocks[i][j]
         this.blocks[i][j] = this.blocks[prei][prej]
         this.blocks[prei][prej] = tmp

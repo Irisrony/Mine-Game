@@ -9,6 +9,8 @@ class GameController{
     scorePanel: ScorePanel
     // 扫雷区域
     minesArea: HTMLElement
+    // 扫雷区域格子集合
+    blocksElem: HTMLCollection
     // 刷新按钮
     reloadButton: HTMLElement
     // 暂停按钮
@@ -29,9 +31,10 @@ class GameController{
     bindMouseClickHandler: (e: MouseEvent) => void
 
     constructor(){
-        this.blocks = new Block()
+        this.blocks = new Block(blocksWidth,blocksHeight,mines)
         this.scorePanel = new ScorePanel(startTime,totalBolcks,mines)
         this.minesArea = document.querySelector("#stage")!
+        this.blocksElem = this.minesArea.getElementsByTagName('div')
         this.reloadButton = document.querySelector("#reload")!
         this.stopButton = document.querySelector("#stop")!
         this.goOnButton = document.querySelector("#go_on")!
@@ -43,15 +46,7 @@ class GameController{
 
     private init(){
         // 初始化方块
-        for(let i = 0;i<blocksHeight;++i){
-            for(let j = 0;j<blocksWidth;++j){
-                if((i+j) % 2 === 0){
-                    this.minesArea.insertAdjacentHTML("beforeend",`<div style="background-color:${Color.Light}" key="${i+","+j}"></div>`)
-                }else{
-                    this.minesArea.insertAdjacentHTML("beforeend",`<div style="background-color:${Color.Dark}" key="${i+","+j}"></div>`)
-                }
-            }
-        } 
+        this.initBlocks()
 
         // 绑定扫雷区域鼠标单击事件
         this.addMinesListener()
@@ -65,6 +60,19 @@ class GameController{
         // 绑定继续按钮点击事件
         this.goOnButton.addEventListener("click",this.goOnButtonClickHandler.bind(this))
 
+    }
+
+    // 初始化方块
+    private initBlocks(){
+        for(let i = 0;i<blocksHeight;++i){
+            for(let j = 0;j<blocksWidth;++j){
+                if((i+j) % 2 === 0){
+                    this.minesArea.insertAdjacentHTML("beforeend",`<div style="background-color:${Color.Light}" key="${i+","+j}"></div>`)
+                }else{
+                    this.minesArea.insertAdjacentHTML("beforeend",`<div style="background-color:${Color.Dark}" key="${i+","+j}"></div>`)
+                }
+            }
+        }
     }
 
     // 扫雷区域鼠标点击事件
@@ -81,24 +89,41 @@ class GameController{
                     this.run()
                 }
                 // 翻开的格子数
-                const cnt = this.blocks.checkMine(i,j,this.isFirstClick)
+                const openBlocks = this.blocks.checkMine(i,j,this.isFirstClick)
+
+                openBlocks.forEach(block=>this.paintBlock(block.x,block.y,block.roundMines))
 
                 // 减少安全格数量
-                this.scorePanel.decreaseSaveBlock(cnt)
+                this.scorePanel.decreaseSaveBlock(openBlocks.length)
                 this.isFirstClick = false
 
                 if(this.scorePanel.Block === 0){
                     this.isAlive = false
-                    this.blocks.paintMines()
+                    // this.blocks.paintAllMines()
+                    const allMines = this.blocks.getAllMines()
+                    allMines.forEach(mines=>this.paintBlock(mines.x,mines.y,mines.roundMines))
                     alert(`您成功了！用时${this.scorePanel.TimeRec}s!`)
                 }
 
             }catch(e : any){
                 this.isAlive = false
-                this.blocks.paintMines()
+                // this.blocks.paintAllMines()
+                const allMines = this.blocks.getAllMines()
+                allMines.forEach(mines=>this.paintBlock(mines.x,mines.y,mines.roundMines))
                 alert(e.message)
             }
 
+        }
+    }
+
+    // 改变翻开的方块样式
+    private paintBlock(i: number,j: number,cnt: number){
+        (this.blocksElem[i*blocksWidth+j] as HTMLElement).style.backgroundColor = Color.Open;
+        if(cnt === -1){ // 炸弹
+            (this.blocksElem[i*blocksWidth+j] as HTMLElement).style.color = Color.Over;
+            (this.blocksElem[i*blocksWidth+j] as HTMLElement).innerHTML = "X"
+        }else{ // 安全格
+            (this.blocksElem[i*blocksWidth+j] as HTMLElement).innerHTML = cnt === 0 ? "" : cnt + "";
         }
     }
 
