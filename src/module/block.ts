@@ -1,5 +1,3 @@
-import { Color } from "./global"
-
 type blockInfo = {
     x: number
     y: number
@@ -20,7 +18,7 @@ class Block{
     private maxOpenBlocks: number = 20
 
     constructor(blocksWidth:number,blocksHeight:number,mines:number){
-        
+
         this.width = blocksWidth
         this.height = blocksHeight
         this.mines = mines
