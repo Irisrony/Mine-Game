@@ -98,19 +98,12 @@ class GameController{
                 this.isFirstClick = false
 
                 if(this.scorePanel.Block === 0){
-                    this.isAlive = false
-                    // this.blocks.paintAllMines()
-                    const allMines = this.blocks.getAllMines()
-                    allMines.forEach(mines=>this.paintBlock(mines.x,mines.y,mines.roundMines))
-                    alert(`您成功了！用时${this.scorePanel.TimeRec}s!`)
+                    this.updateTime()
+                    this.gameover(`您成功了！用时${this.scorePanel.TimeRec}s! 最快完成时间${localStorage.getItem("bestMineTime")}s!`)
                 }
 
             }catch(e : any){
-                this.isAlive = false
-                // this.blocks.paintAllMines()
-                const allMines = this.blocks.getAllMines()
-                allMines.forEach(mines=>this.paintBlock(mines.x,mines.y,mines.roundMines))
-                alert(e.message)
+                this.gameover(e.message)
             }
 
         }
@@ -136,16 +129,23 @@ class GameController{
                 this.scorePanel.addTime()
             }
             setTimeout(this.run.bind(this),1000)
-        }else{ // 游戏结束
-            this.gameOver()
-            this.removeMinesListener()
         }
     }
 
     // 游戏结束，移除所有监听器
-    private gameOver(){
+    private gameover(message: string){
+        this.isAlive = false
         this.removeMinesListener()
+        const allMines = this.blocks.getAllMines()
+        allMines.forEach(mines=>this.paintBlock(mines.x,mines.y,mines.roundMines))
+        alert(message)
 
+    }
+
+    // 更新最佳完成时间
+    private updateTime(){
+        const bestTime = Number(localStorage.getItem("bestMineTime")) || Number.MAX_VALUE
+        localStorage.setItem("bestMineTime",String(Math.min(bestTime,this.scorePanel.TimeRec)))
     }
 
     // 移除扫雷区域监听事件
